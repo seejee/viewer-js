@@ -3,30 +3,30 @@ var Omnyx = {}
 Omnyx.Net = function() {
 
     return {
-      downloadBinaryData: function(url) {
-        var request = new XMLHttpRequest();
-        request.open('GET', url, false); 
-        request.overrideMimeType('text/plain; charset=x-user-defined');
-        request.send(null);
+        downloadBinaryData: function(url) {
+            var request = new XMLHttpRequest();
+            request.open('GET', url, false);
+            request.overrideMimeType('text/plain; charset=x-user-defined');
+            request.send(null);
 
-        if (request.status != 0) {
-          throw "could not download data";
+            if (request.status != 0) {
+                throw "could not download data";
+            }
+
+            console.log("got data");
+
+            var bytes = [request.responseText.length];
+
+            for (var i = 0; i < request.responseText.length; ++i) {
+                bytes[i] = request.responseText.charCodeAt(i) & 0xff;
+            }
+
+            console.log("converted to binary");
+
+            return bytes;
         }
-        
-        console.log("got data");
-
-        var bytes = [request.responseText.length];
-
-        for (var i = 0; i < request.responseText.length; ++i) {
-            bytes[i] = request.responseText.charCodeAt(i) & 0xff;
-        }
-        
-        console.log("converted to binary");
-      
-        return bytes;
-      }
     };
-}();
+} ();
 
 Omnyx.Decoding = function() {
 
@@ -148,19 +148,19 @@ Omnyx.Viewer = function() {
             this.image = image;
             this.position = position;
             this.draw = function(ctx) {
-               ctx.drawImage(this.image, this.position.x, this.position.y);
+                ctx.drawImage(this.image, this.position.x, this.position.y);
             };
         },
-        
+
         ImageDataTile: function ImageDataTile(imageData, position)
         {
             this.imageData = imageData;
             this.position = position;
             this.draw = function(ctx) {
-               ctx.putImageData(this.imageData, this.position.x, this.position.y);
+                ctx.putImageData(this.imageData, this.position.x, this.position.y);
             };
         },
-        
+
         Viewer: function Viewer(c) {
 
             this.canvas = c;
@@ -200,7 +200,7 @@ Omnyx.Viewer = function() {
                 ctx.save();
                 ctx.scale(scale, scale);
                 ctx.translate(this.translate.x, this.translate.y);
-                ctx.clearRect(-canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+                ctx.clearRect( - canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
 
                 for (idx in tiles) {
                     var tile = tiles[idx];
@@ -209,27 +209,30 @@ Omnyx.Viewer = function() {
 
                 ctx.restore();
             };
-            
+
             this.addRawRgb = function(bytes, width, height) {
-              var ctx = this.ctx;
-              
-              var canvasData = ctx.createImageData(width, height);
-              var d = canvasData.data;
-              for (var x = 0; x < canvasData.width; x++)  {
-                  for (var y = 0; y < canvasData.height; y++)  {
+                var ctx = this.ctx;
 
-                      // Index of the pixel in the array
-                      var srcIdx = (x + y * width) * 3;
-                      var idx = (x + y * width) * 4;
+                var canvasData = ctx.createImageData(width, height);
+                var d = canvasData.data;
+                for (var x = 0; x < canvasData.width; x++) {
+                    for (var y = 0; y < canvasData.height; y++) {
 
-                      d[idx + 0] = bytes[srcIdx + 0];
-                      d[idx + 1] = bytes[srcIdx + 1];
-                      d[idx + 2] = bytes[srcIdx + 2];
-                      d[idx + 3] = 255;
-                  }
-              }
-              this.tiles.push(new Omnyx.Viewer.ImageDataTile(canvasData, {x: 0, y: 0}));
-              this.draw();
+                        // Index of the pixel in the array
+                        var srcIdx = (x + y * width) * 3;
+                        var idx = (x + y * width) * 4;
+
+                        d[idx + 0] = bytes[srcIdx + 0];
+                        d[idx + 1] = bytes[srcIdx + 1];
+                        d[idx + 2] = bytes[srcIdx + 2];
+                        d[idx + 3] = 255;
+                    }
+                }
+                this.tiles.push(new Omnyx.Viewer.ImageDataTile(canvasData, {
+                    x: 0,
+                    y: 0
+                }));
+                this.draw();
             };
 
             this.zoom = function(direction) {
@@ -297,16 +300,14 @@ Omnyx.Viewer = function() {
                 case 100:
                     //right arrow
                     viewer.panAbsolute({
-                        x:
-                        100,
+                        x: 100,
                         y: 0
                     });
                     break;
                 case 97:
                     //left arrow
                     viewer.panAbsolute({
-                        x:
-                        -100,
+                        x: -100,
                         y: 0
                     });
                     break;
@@ -322,13 +323,13 @@ $(function() {
     var viewer = new Omnyx.Viewer.Viewer(canvas[0]);
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
-    
+
+    var bytes = Omnyx.Net.downloadBinaryData('file://localhost/Users/stinkles/code/viewer-js/content/tile.raw');
+
     var bayerToRgb = new Omnyx.Decoding.BayerToRgbConverter();
-    var bytes = Omnyx.Net.downloadBinaryData('file://localhost/Users/stinkles/code/viewer-js/content/tile.raw'); 
-     
     var rgb = bayerToRgb.convert(bytes, 3296, 2472);
     console.log("converted to rgb");
+
     viewer.addRawRgb(rgb, 3296, 2472);
-    
     console.log("drawn");
 });
