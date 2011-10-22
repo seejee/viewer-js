@@ -202,10 +202,10 @@ Omnyx.Viewer = function() {
             this.addRawRgb = function(bytes, width, height) {
                 var ctx = this.ctx;
 
-                var canvasData = ctx.createImageData(width, height);
-                var d = canvasData.data;
-                for (var x = 0; x < canvasData.width; x++) {
-                    for (var y = 0; y < canvasData.height; y++) {
+                var imageData = ctx.createImageData(width, height);
+                var d = imageData.data;
+                for (var x = 0; x < imageData.width; x++) {
+                    for (var y = 0; y < imageData.height; y++) {
 
                         var srcIdx = (x + y * width) * 3;
                         var idx = (x + y * width) * 4;
@@ -216,10 +216,11 @@ Omnyx.Viewer = function() {
                         d[idx + 3] = 255;
                     }
                 }
-                this.tiles.push(new Omnyx.Viewer.ImageDataTile(canvasData, {
+                this.tiles.push(new Omnyx.Viewer.ImageDataTile(imageData, {
                     x: 0,
                     y: 0
                 }));
+                console.log("created image data object");
                 this.draw();
             };
 

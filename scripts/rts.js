@@ -155,8 +155,10 @@ $(function () {
     var a = new Wavelet97JS();
     var kInverseNrPixels = a.getInverseNrPixels();
 
+    //var imageBuffer = new ArrayBuffer(kInverseNrPixels);
+    //var image = new Float32Array(imageBuffer);
     var image = new Array(kInverseNrPixels);
-
+    
     image[0] = 353462.7;
     image[1] = 8636593;
     image[2] = 5555780;
