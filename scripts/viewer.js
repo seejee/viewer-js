@@ -123,16 +123,14 @@ var Omnyx = function() {
                 case 100:
                     //right arrow
                     viewer.panAbsolute({
-                        x:
-                        100,
+                        x: 100,
                         y: 0
                     });
                     break;
                 case 97:
                     //left arrow
                     viewer.panAbsolute({
-                        x:
-                        -100,
+                        x: -100,
                         y: 0
                     });
                     break;
