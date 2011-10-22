@@ -93,9 +93,8 @@ var Omnyx = function() {
         },
 
         bindViewerToMouse: function(selector, viewer) {
-            selector.bind('mousewheel',
-            function(ev) {
-                viewer.zoom(ev.wheelDelta);
+            selector.mousewheel(function(ev, delta) {
+                viewer.zoom(delta);
             });
 
             selector.mousedown(function(ev) {
