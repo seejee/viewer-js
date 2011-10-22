@@ -3,27 +3,14 @@ var Omnyx = {}
 Omnyx.Net = function() {
 
     return {
-        downloadBinaryData: function(url) {
+        downloadBinaryData: function(url, arrayHandler) {
             var request = new XMLHttpRequest();
-            request.open('GET', url, false);
-            request.overrideMimeType('text/plain; charset=x-user-defined');
-            request.send(null);
-
-            if (request.status != 0) {
-                throw "could not download data";
-            }
-
-            console.log("got data");
-
-            var bytes = [request.responseText.length];
-
-            for (var i = 0; i < request.responseText.length; ++i) {
-                bytes[i] = request.responseText.charCodeAt(i) & 0xff;
-            }
-
-            console.log("converted to binary");
-
-            return bytes;
+            request.open('GET', url, true);
+			      request.responseType = 'arraybuffer';
+            request.onload = function(e) {
+                arrayHandler(new Uint8Array(this.response));
+            };
+            request.send();
         }
     };
 } ();
@@ -324,12 +311,14 @@ $(function() {
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
 
-    var bytes = Omnyx.Net.downloadBinaryData('content/tile.raw');
+    Omnyx.Net.downloadBinaryData('content/tile.raw', function(bytes) {
+      console.log("downloaded data");
+      
+      var bayerToRgb = new Omnyx.Decoding.BayerToRgbConverter();
+      var rgb = bayerToRgb.convert(bytes, 3296, 2472);
+      console.log("converted to rgb");
 
-    var bayerToRgb = new Omnyx.Decoding.BayerToRgbConverter();
-    var rgb = bayerToRgb.convert(bytes, 3296, 2472);
-    console.log("converted to rgb");
-
-    viewer.addRawRgb(rgb, 3296, 2472);
-    console.log("drawn");
+      viewer.addRawRgb(rgb, 3296, 2472);
+      console.log("drawn");
+    });
 });
