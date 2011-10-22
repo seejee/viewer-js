@@ -324,7 +324,7 @@ $(function() {
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
 
-    var bytes = Omnyx.Net.downloadBinaryData('file://localhost/Users/stinkles/code/viewer-js/content/tile.raw');
+    var bytes = Omnyx.Net.downloadBinaryData('content/tile.raw');
 
     var bayerToRgb = new Omnyx.Decoding.BayerToRgbConverter();
     var rgb = bayerToRgb.convert(bytes, 3296, 2472);
