@@ -32,7 +32,9 @@ Omnyx.Decoding = function() {
             };
 
             this.convert = function(bayer, pixelWidth, pixelHeight) {
-                var rgb = new Array(pixelHeight * pixelWidth * 3);
+                var rgbBuffer = new ArrayBuffer(pixelHeight * pixelWidth * 3);
+                var rgb = new Uint8Array(rgbBuffer);
+                
                 var bayerStep = pixelWidth;
                 var rgbStep = pixelWidth * 3;
 
@@ -205,7 +207,6 @@ Omnyx.Viewer = function() {
                 for (var x = 0; x < canvasData.width; x++) {
                     for (var y = 0; y < canvasData.height; y++) {
 
-                        // Index of the pixel in the array
                         var srcIdx = (x + y * width) * 3;
                         var idx = (x + y * width) * 4;
 
