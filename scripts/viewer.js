@@ -13,12 +13,20 @@ Omnyx.Viewer = function() {
             };
         },
 
-        ImageDataTile: function ImageDataTile(imageData, position)
+        ImageDataTile: function ImageDataTile(width, height, callback, position)
         {
-            this.imageData = imageData;
+            var cvs = document.createElement("canvas");
+            cvs.width = width;
+            cvs.height = height;
+            var ctx = cvs.getContext("2d");
+            var imageData = ctx.createImageData(width, height);
+            callback(imageData.data);
+            ctx.putImageData(imageData, 0, 0);
+            
             this.position = position;
+            this.canvas = cvs;
             this.draw = function(ctx) {
-                ctx.putImageData(this.imageData, this.position.x, this.position.y);
+                ctx.drawImage(this.canvas, this.position.x, this.position.y);
             };
         },
 
@@ -59,25 +67,22 @@ Omnyx.Viewer = function() {
                 var tiles = this.tiles;
 
                 ctx.save();
+                                
                 ctx.scale(scale, scale);
                 ctx.translate(this.translate.x, this.translate.y);
                 ctx.clearRect( -canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
-
+               
                 for (idx in tiles) {
                     var tile = tiles[idx];
                     tile.draw(ctx);
                 }
-
+                
                 ctx.restore();
             };
             
             this.addRgb = function(width, height, callback) {
-                var ctx = this.ctx;
-
-                var imageData = ctx.createImageData(width, height);
-                callback(imageData.data);
                 
-                this.tiles.push(new Omnyx.Viewer.ImageDataTile(imageData, {
+                this.tiles.push(new Omnyx.Viewer.ImageDataTile(width, height, callback, {
                     x: 0,
                     y: 0
                 }));
