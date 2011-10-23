@@ -2,9 +2,9 @@ var Omnyx = Omnyx || {};
 
 Omnyx.Viewer = function() {
 
-    var me = {};
+    var ns = {};
 
-        me.ImageTile = function ImageTile(image, position) {
+        ns.ImageTile = function ImageTile(image, position) {
           this.image = image;
           this.position = position;
           
@@ -13,113 +13,114 @@ Omnyx.Viewer = function() {
           };
         };
         
-        me.ImageTile.fromRgbBuffer = function (width, height, position, setBytesCallback) {
-            var cvs = document.createElement("canvas");
-            cvs.width = width;
-            cvs.height = height;
-            var ctx = cvs.getContext("2d");
-            var imageData = ctx.createImageData(width, height);
-            setBytesCallback(imageData.data);
-            ctx.putImageData(imageData, 0, 0);
-            
-            return new me.ImageTile(cvs, position);
+        ns.ImageTile.fromRgbBuffer = function (width, height, position, setBytesCallback) {
+          var cvs = document.createElement("canvas");
+          var ctx = cvs.getContext("2d");
+          var imageData = ctx.createImageData(width, height);
+        
+          cvs.width = width;
+          cvs.height = height;
+        
+          setBytesCallback(imageData.data);
+          ctx.putImageData(imageData, 0, 0);
+        
+          return new ns.ImageTile(cvs, position);
         };
         
-        me.ImageTile.fromImage = function (src, position, tileCallback) {
+        ns.ImageTile.fromImage = function (src, position, tileCallback) {
           var im = new Image();
           im.onload = function(ev) {
-              tileCallback(new me.ImageTile(im, position));
+              tileCallback(new ns.ImageTile(im, position));
           };
           im.src = src;
         };
 
-        me.Viewer = function Viewer(c) {
+        ns.Viewer = function Viewer(c) {
+          this.canvas = c;
+          this.ctx = this.canvas.getContext("2d");
+          this.scale = 1;
+          this.tiles = new Array();
+          this.isPanning = false;
+          this.translate = {
+              x: 0,
+              y: 0
+          };
+          this.lastPosition = {
+              x: 0,
+              y: 0
+          };
 
-            this.canvas = c;
-            this.ctx = this.canvas.getContext("2d");
-            this.scale = 1;
-            this.tiles = new Array();
-            this.isPanning = false;
-            this.translate = {
-                x: 0,
-                y: 0
-            };
-            this.lastPosition = {
-                x: 0,
-                y: 0
-            };
+          this.addTile = function(tile, position) {
+              this.tiles.push(tile);
+              this.draw();
+          };
 
-            this.addTile = function(tile, position) {
-                this.tiles.push(tile);
-                this.draw();
-            };
+          this.draw = function() {
+              var ctx = this.ctx;
+              var canvas = this.canvas;
+              var scale = this.scale;
+              var tiles = this.tiles;
 
-            this.draw = function() {
-                var ctx = this.ctx;
-                var canvas = this.canvas;
-                var scale = this.scale;
-                var tiles = this.tiles;
+              ctx.save();
 
-                ctx.save();
+              ctx.scale(scale, scale);
+              ctx.translate(this.translate.x, this.translate.y);
+              ctx.clearRect( - canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
 
-                ctx.scale(scale, scale);
-                ctx.translate(this.translate.x, this.translate.y);
-                ctx.clearRect( - canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+              for (idx in tiles) {
+                  var tile = tiles[idx];
+                  tile.draw(ctx);
+              }
 
-                for (idx in tiles) {
-                    var tile = tiles[idx];
-                    tile.draw(ctx);
-                }
+              ctx.restore();
+          };
 
-                ctx.restore();
-            };
+          this.addRgb = function(width, height, callback) {
 
-            this.addRgb = function(width, height, callback) {
+              this.tiles.push(new Omnyx.Viewer.ImageDataTile(width, height, callback, {
+                  x: 0,
+                  y: 0
+              }));
+              console.log("created image data object");
+              this.draw();
+          };
 
-                this.tiles.push(new Omnyx.Viewer.ImageDataTile(width, height, callback, {
-                    x: 0,
-                    y: 0
-                }));
-                console.log("created image data object");
-                this.draw();
-            };
+          this.zoom = function(direction) {
+              this.scale *= ((direction > 0) ? 0.83333333333: 1.2);
+              this.draw();
+          };
 
-            this.zoom = function(direction) {
-                this.scale *= ((direction > 0) ? 0.83333333333: 1.2);
-                this.draw();
-            };
+          this.panRelative = function(position) {
+              if (this.isPanning == false) return;
 
-            this.panRelative = function(position) {
-                if (this.isPanning == false) return;
+              this.translate.x += position.x - this.lastPosition.x;
+              this.translate.y += position.y - this.lastPosition.y;
+              this.lastPosition = position;
+              this.draw();
+          };
 
-                this.translate.x += position.x - this.lastPosition.x;
-                this.translate.y += position.y - this.lastPosition.y;
-                this.lastPosition = position;
-                this.draw();
-            };
+          this.panAbsolute = function(position) {
+              this.translate.x += position.x;
+              this.translate.y += position.y;
+              this.lastPosition = position;
+              this.draw();
+          };
 
-            this.panAbsolute = function(position) {
-                this.translate.x += position.x;
-                this.translate.y += position.y;
-                this.lastPosition = position;
-                this.draw();
-            };
+          this.startPanning = function() {
+              this.isPanning = true;
+          };
 
-            this.startPanning = function() {
-                this.isPanning = true;
-            };
+          this.startPanning = function(position) {
+              this.isPanning = true;
+              this.lastPosition = position;
+          };
 
-            this.startPanning = function(position) {
-                this.isPanning = true;
-                this.lastPosition = position;
-            };
-
-            this.stopPanning = function() {
-                this.isPanning = false;
-            };
+          this.stopPanning = function() {
+              this.isPanning = false;
+          };
         };
 
-        me.bindViewerToMouse = function(selector, viewer) {
+        ns.bindViewerToMouse = function(selector, viewer) {
             selector.mousewheel(function(ev, delta) {
                 viewer.zoom(delta);
             });
@@ -143,7 +144,7 @@ Omnyx.Viewer = function() {
             });
         };
 
-        me.bindViewerToKeyboard = function(selector, viewer) {
+        ns.bindViewerToKeyboard = function(selector, viewer) {
             selector.keypress(function(ev) {
                 switch (ev.which) {
                 case 100:
@@ -166,7 +167,7 @@ Omnyx.Viewer = function() {
             });
         };
 
-    return me;
+    return ns;
 } ();
 
 $(function() {
@@ -176,16 +177,14 @@ $(function() {
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
 
-    Omnyx.Net.downloadBinaryData('content/tile.raw',
-    function(bytes) {
+    Omnyx.Net.downloadBinaryData('content/tile.raw', function(bytes) {
         console.log("downloaded data");
 
         var tile = Omnyx.Viewer.ImageTile.fromRgbBuffer(3296, 2472, {x: 0, y: 0}, function(imageData) {
             var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
             bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
+            console.log("converted to rgb");
         });
-        
-        console.log("converted to rgb");
         
         viewer.addTile(tile);
         console.log("drawn");
