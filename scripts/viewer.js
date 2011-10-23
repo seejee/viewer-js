@@ -174,5 +174,10 @@ $(function() {
     
         viewer.addTile(tile);
         console.log("drawn");
+      
+    });
+    
+    Omnyx.Viewer.ImageTile.fromImage("content/cat.jpg", {x: -300, y: -300}, function(tile) {
+       viewer.addTile(tile);
     });
 });
