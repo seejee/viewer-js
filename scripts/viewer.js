@@ -3,13 +3,30 @@ var Omnyx = Omnyx || {};
 Omnyx.Viewer = function() {
 
     var ns = {};
-
+    
     ns.ImageTile = function ImageTile(image, position) {
       this.image = image;
       this.position = position;
       
       this.drawOn = function(ctx) {
           ctx.drawImage(image, position.x, position.y);
+      };
+    };
+    
+    ns.HiddenCanvas = function HiddenCanvas(width, height) { 
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      var imageData = ctx.createImageData(width, height);
+      canvas.width = width;
+      canvas.height = height;
+      
+      this.workOnPixels = function(setPixelCallback) {
+        setPixelCallback(imageData.data);
+      };
+      
+      this.toTile = function(position) {
+        ctx.putImageData(imageData, 0, 0);
+        return new ns.ImageTile(canvas, position);
       };
     };
     
@@ -22,9 +39,7 @@ Omnyx.Viewer = function() {
       cvs.height = height;
     
       setBytesCallback(imageData.data);
-      ctx.putImageData(imageData, 0, 0);
-    
-      return new ns.ImageTile(cvs, position);
+
     };
     
     ns.ImageTile.fromImage = function (src, position, tileCallback) {
@@ -162,17 +177,22 @@ $(function() {
     var viewer = new Omnyx.Viewer.Viewer(canvas[0]);
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
+    
+    var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
 
     Omnyx.Net.downloadBinaryData('content/tile.raw', function(bytes) {
       console.log("downloaded data");
-
-      var tile = Omnyx.Viewer.ImageTile.fromRgbBuffer(3296, 2472, {x: 0, y: 0}, function(imageData) {
-          var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
-          bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
-          console.log("converted to rgb");
+      
+      var hiddenCanvas = new Omnyx.Viewer.HiddenCanvas(3296, 2472);
+      
+      hiddenCanvas.workOnPixels(function(imageData) {
+        bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
+        console.log("converted to rgb");
       });
-  
+      
+      var tile = hiddenCanvas.toTile({x: 0, y: 0});
       viewer.addTile(tile);
+      
       console.log("drawn");
     });
         
