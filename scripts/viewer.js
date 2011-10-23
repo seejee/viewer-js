@@ -2,35 +2,38 @@ var Omnyx = Omnyx || {};
 
 Omnyx.Viewer = function() {
 
-    return {
+    var me = {};
 
-        ImageTile: function ImageTile(image, position)
-        {
-            this.image = image;
-            this.position = position;
-            this.draw = function(ctx) {
-                ctx.drawImage(this.image, this.position.x, this.position.y);
-            };
-        },
-
-        ImageDataTile: function ImageDataTile(width, height, callback, position)
-        {
+        me.ImageTile = function ImageTile(image, position) {
+          this.image = image;
+          this.position = position;
+          
+          this.draw = function(ctx) {
+              ctx.drawImage(image, position.x, position.y);
+          };
+        };
+        
+        me.ImageTile.fromRgbBuffer = function (width, height, position, setBytesCallback) {
             var cvs = document.createElement("canvas");
             cvs.width = width;
             cvs.height = height;
             var ctx = cvs.getContext("2d");
             var imageData = ctx.createImageData(width, height);
-            callback(imageData.data);
+            setBytesCallback(imageData.data);
             ctx.putImageData(imageData, 0, 0);
             
-            this.position = position;
-            this.canvas = cvs;
-            this.draw = function(ctx) {
-                ctx.drawImage(this.canvas, this.position.x, this.position.y);
-            };
-        },
+            return new me.ImageTile(cvs, position);
+        };
+        
+        me.ImageTile.fromImage = function (src, position, tileCallback) {
+          var im = new Image();
+          im.onload = function(ev) {
+              tileCallback(new me.ImageTile(im, position));
+          };
+          im.src = src;
+        };
 
-        Viewer: function Viewer(c) {
+        me.Viewer = function Viewer(c) {
 
             this.canvas = c;
             this.ctx = this.canvas.getContext("2d");
@@ -46,18 +49,9 @@ Omnyx.Viewer = function() {
                 y: 0
             };
 
-            this.addTile = function(image, position) {
-                this.tiles.push(new Omnyx.Viewer.ImageTile(image, position));
+            this.addTile = function(tile, position) {
+                this.tiles.push(tile);
                 this.draw();
-            };
-
-            this.addImage = function(src, position) {
-                var im = new Image();
-                var viewer = this;
-                im.onload = function(ev) {
-                    viewer.addTile(im, position);
-                };
-                im.src = src;
             };
 
             this.draw = function() {
@@ -67,21 +61,21 @@ Omnyx.Viewer = function() {
                 var tiles = this.tiles;
 
                 ctx.save();
-                                
+
                 ctx.scale(scale, scale);
                 ctx.translate(this.translate.x, this.translate.y);
-                ctx.clearRect( -canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
-               
+                ctx.clearRect( - canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+
                 for (idx in tiles) {
                     var tile = tiles[idx];
                     tile.draw(ctx);
                 }
-                
+
                 ctx.restore();
             };
-            
+
             this.addRgb = function(width, height, callback) {
-                
+
                 this.tiles.push(new Omnyx.Viewer.ImageDataTile(width, height, callback, {
                     x: 0,
                     y: 0
@@ -123,9 +117,9 @@ Omnyx.Viewer = function() {
             this.stopPanning = function() {
                 this.isPanning = false;
             };
-        },
+        };
 
-        bindViewerToMouse: function(selector, viewer) {
+        me.bindViewerToMouse = function(selector, viewer) {
             selector.mousewheel(function(ev, delta) {
                 viewer.zoom(delta);
             });
@@ -147,29 +141,32 @@ Omnyx.Viewer = function() {
             selector.mouseup(function(ev) {
                 viewer.stopPanning();
             });
-        },
+        };
 
-        bindViewerToKeyboard: function(selector, viewer) {
+        me.bindViewerToKeyboard = function(selector, viewer) {
             selector.keypress(function(ev) {
                 switch (ev.which) {
                 case 100:
                     //right arrow
                     viewer.panAbsolute({
-                        x: 100,
+                        x:
+                        100,
                         y: 0
                     });
                     break;
                 case 97:
                     //left arrow
                     viewer.panAbsolute({
-                        x: -100,
+                        x:
+                        -100,
                         y: 0
                     });
                     break;
                 }
             });
-        }
-    };
+        };
+
+    return me;
 } ();
 
 $(function() {
@@ -179,15 +176,18 @@ $(function() {
     Omnyx.Viewer.bindViewerToMouse(canvas, viewer);
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
 
-    Omnyx.Net.downloadBinaryData('content/tile.raw', function(bytes) {
-      console.log("downloaded data");
+    Omnyx.Net.downloadBinaryData('content/tile.raw',
+    function(bytes) {
+        console.log("downloaded data");
 
-      viewer.addRgb(3296, 2472, function(imageData) {
-        var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
-        var rgb = bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
+        var tile = Omnyx.Viewer.ImageTile.fromRgbBuffer(3296, 2472, {x: 0, y: 0}, function(imageData) {
+            var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
+            bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
+        });
+        
         console.log("converted to rgb");
-      });
-      
-      console.log("drawn");
+        
+        viewer.addTile(tile);
+        console.log("drawn");
     });
 });
