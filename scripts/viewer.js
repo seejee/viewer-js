@@ -63,8 +63,8 @@ Omnyx.Viewer = function() {
 
           ctx.save();
 
-          ctx.scale(scale, scale);
           ctx.translate(this.translate.x, this.translate.y);
+          ctx.scale(scale, scale);
           ctx.clearRect( -canvas.width * 2, -canvas.height * 2, canvas.width * 4, canvas.height * 4);
 
           for (idx in tiles) {
@@ -164,19 +164,18 @@ $(function() {
     Omnyx.Viewer.bindViewerToKeyboard($(document), viewer);
 
     Omnyx.Net.downloadBinaryData('content/tile.raw', function(bytes) {
-        console.log("downloaded data");
+      console.log("downloaded data");
 
-        var tile = Omnyx.Viewer.ImageTile.fromRgbBuffer(3296, 2472, {x: 0, y: 0}, function(imageData) {
-            var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
-            bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
-            console.log("converted to rgb");
-        });
-    
-        viewer.addTile(tile);
-        console.log("drawn");
-      
+      var tile = Omnyx.Viewer.ImageTile.fromRgbBuffer(3296, 2472, {x: 0, y: 0}, function(imageData) {
+          var bayerToRgb = new Omnyx.Decoding.BayerToRgbaConverter();
+          bayerToRgb.convertInto(bytes, imageData, 3296, 2472);
+          console.log("converted to rgb");
+      });
+  
+      viewer.addTile(tile);
+      console.log("drawn");
     });
-    
+        
     Omnyx.Viewer.ImageTile.fromImage("content/cat.jpg", {x: -300, y: -300}, function(tile) {
        viewer.addTile(tile);
     });
