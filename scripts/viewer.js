@@ -189,7 +189,7 @@ Omnyx.Viewer = function() {
                 ctx.save();
                 ctx.scale(scale, scale);
                 ctx.translate(this.translate.x, this.translate.y);
-                ctx.clearRect( - canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
+                ctx.clearRect( -canvas.width, -canvas.height, canvas.width * 2, canvas.height * 2);
 
                 for (idx in tiles) {
                     var tile = tiles[idx];
@@ -203,19 +203,20 @@ Omnyx.Viewer = function() {
                 var ctx = this.ctx;
 
                 var imageData = ctx.createImageData(width, height);
+                console.log("got canvas");
                 var d = imageData.data;
-                for (var x = 0; x < imageData.width; x++) {
-                    for (var y = 0; y < imageData.height; y++) {
-
-                        var srcIdx = (x + y * width) * 3;
-                        var idx = (x + y * width) * 4;
-
-                        d[idx + 0] = bytes[srcIdx + 0];
-                        d[idx + 1] = bytes[srcIdx + 1];
-                        d[idx + 2] = bytes[srcIdx + 2];
-                        d[idx + 3] = 255;
-                    }
+                
+                var srcIdx = -1;
+                var destIdx = -1;
+                
+                //fast copy
+                while(srcIdx < bytes.length) {
+                  d[++destIdx] = bytes[++srcIdx];
+                  d[++destIdx] = bytes[++srcIdx];
+                  d[++destIdx] = bytes[++srcIdx];
+                  d[++destIdx] = 255
                 }
+                
                 this.tiles.push(new Omnyx.Viewer.ImageDataTile(imageData, {
                     x: 0,
                     y: 0
